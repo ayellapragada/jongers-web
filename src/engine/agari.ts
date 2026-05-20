@@ -8,10 +8,13 @@ import { Tile } from './tile';
 export function isWinning(h: Hand): boolean {
   const tiles = concealedCounts(h);
   for (const m of h.melds) {
-    for (const t of m.tiles) tiles[t]++;
+    for (const t of m.tiles) tiles[t] = tiles[t]! + 1;
     // A kong uses 4 tiles but occupies one meld slot; the kernel expects
     // 3-tile-per-meld footprint, so peel one off per kong.
-    if (isKong(m)) tiles[m.tiles[0] as Tile]--;
+    if (isKong(m)) {
+      const head = m.tiles[0] as Tile;
+      tiles[head] = tiles[head]! - 1;
+    }
   }
   return agariIsAgari(tiles);
 }

@@ -1,34 +1,27 @@
 // HK faan catalog + detectors. Port of MahjongKit/Scoring/{FaanPattern,Detectors}.swift.
 
-import { Tile, tileSuit, tileNumber, isHonor, isTerminal, isTerminalOrHonor,
+import { Tile, Suit, tileSuit, tileNumber, isHonor, isTerminal, isTerminalOrHonor,
          east, south, west, north, red, green, white } from './tile';
-import type { WinningDecomposition, DecomposedMeld } from './decompose';
+import type { WinningDecomposition } from './decompose';
 import type { Wind, WinContext } from '../scenarios/schema';
 
+const DRAGONS = new Set<Tile>([red, green, white]);
+const WINDS = new Set<Tile>([east, south, west, north]);
+
+// Ordered by faan value ascending; see FAAN_VALUE for the canonical number.
 export const FAAN_PATTERNS = [
-  // 1 faan
   'commonHand', 'seatWind', 'prevailingWind',
   'dragonRed', 'dragonGreen', 'dragonWhite',
   'selfPick', 'robbingKong', 'winByLastCatch',
-  // 2 faan
   'winByKong',
-  // 3 faan
   'allInTriplets', 'mixedOneSuit',
-  // 4 faan
   'mixedOrphans', 'sevenPairs',
-  // 5 faan
   'smallDragons',
-  // 6 faan
   'smallWinds',
-  // 7 faan
   'allOneSuit',
-  // 8 faan
   'greatDragons',
-  // 9 faan (bonus)
   'winByDoubleKong',
-  // 10 faan
   'allHonorTiles', 'selfTriplets', 'orphans', 'nineGates',
-  // 13 faan
   'greatWinds', 'thirteenOrphans', 'allKongs', 'heavenlyHand', 'earthlyHand',
 ] as const;
 export type FaanPattern = typeof FAAN_PATTERNS[number];
@@ -120,11 +113,43 @@ function sum(items: FaanItem[]): number {
   return items.reduce((a, b) => a + b.faan, 0);
 }
 
+// Per-decomposition cache so detectors share `tiles`, `suits`, and structural
+// checks instead of each recomputing them.
+type Dctx = {
+  d: WinningDecomposition;
+  isStandard: boolean;
+  tiles: Tile[];
+  suits: Set<Suit>;
+  noChows: boolean;
+  meldHeads: Tile[];   // first tile of each meld (the pong/kong/chow leader)
+};
+
+function makeDctx(d: WinningDecomposition): Dctx {
+  const tiles: Tile[] = [];
+  for (const m of d.melds) tiles.push(...m.tiles);
+  if (d.kind === 'standard' || d.kind === 'thirteenOrphans') {
+    tiles.push(d.pair, d.pair);
+  } else if (d.kind === 'sevenPairs') {
+    for (const t of d.pairs) { tiles.push(t); tiles.push(t); }
+  }
+  const suits = new Set<Suit>();
+  for (const t of tiles) suits.add(tileSuit(t));
+  return {
+    d,
+    isStandard: d.kind === 'standard',
+    tiles,
+    suits,
+    noChows: d.melds.every(m => m.shape !== 'chow'),
+    meldHeads: d.melds.map(m => m.tiles[0]!),
+  };
+}
+
 function detectOne(d: WinningDecomposition, ctx: WinContext, rules: FaanRuleSet): FaanItem[] {
+  const dctx = makeDctx(d);
   const matched: FaanPattern[] = [];
   for (const p of FAAN_PATTERNS) {
     if (FAAN_BONUSES.has(p)) continue;
-    if (matchesPattern(p, d, ctx, rules)) matched.push(p);
+    if (matchesPattern(p, dctx, ctx, rules)) matched.push(p);
   }
   for (const p of FAAN_PATTERNS) {
     if (!FAAN_BONUSES.has(p)) continue;
@@ -139,30 +164,31 @@ function detectOne(d: WinningDecomposition, ctx: WinContext, rules: FaanRuleSet)
 }
 
 function matchesPattern(
-  p: FaanPattern, d: WinningDecomposition, ctx: WinContext, rules: FaanRuleSet,
+  p: FaanPattern, dctx: Dctx, ctx: WinContext, rules: FaanRuleSet,
 ): boolean {
+  const d = dctx.d;
   switch (p) {
-    case 'commonHand':       return isCommonHand(d);
-    case 'seatWind':         return d.kind === 'standard' && hasWindGroup(d, ctx.discarder === undefined ? defaultSeatWind(ctx) : defaultSeatWind(ctx));
-    case 'prevailingWind':   return d.kind === 'standard' && hasWindGroup(d, prevailingWindFromCtx(ctx));
-    case 'dragonRed':        return d.kind === 'standard' && hasNonChowOf(d, red);
-    case 'dragonGreen':      return d.kind === 'standard' && hasNonChowOf(d, green);
-    case 'dragonWhite':      return d.kind === 'standard' && hasNonChowOf(d, white);
-    case 'allInTriplets':    return isAllInTriplets(d);
-    case 'mixedOneSuit':     return isMixedOneSuit(d);
+    case 'commonHand':       return dctx.isStandard && d.melds.every(m => m.shape === 'chow');
+    case 'seatWind':         return dctx.isStandard && hasWindGroup(dctx, ctx.seatWind);
+    case 'prevailingWind':   return dctx.isStandard && hasWindGroup(dctx, ctx.prevailingWind);
+    case 'dragonRed':        return dctx.isStandard && hasNonChowOf(d, red);
+    case 'dragonGreen':      return dctx.isStandard && hasNonChowOf(d, green);
+    case 'dragonWhite':      return dctx.isStandard && hasNonChowOf(d, white);
+    case 'allInTriplets':    return dctx.isStandard && dctx.noChows;
+    case 'mixedOneSuit':     return isMixedOneSuit(dctx);
     case 'sevenPairs':       return rules.sevenPairsAllowed && d.kind === 'sevenPairs';
-    case 'mixedOrphans':     return isMixedOrphans(d);
-    case 'smallDragons':     return isSmallDragons(d);
-    case 'smallWinds':       return isSmallWinds(d);
-    case 'allOneSuit':       return isAllOneSuit(d);
-    case 'greatDragons':     return isGreatDragons(d);
-    case 'allHonorTiles':    return isAllHonors(d);
-    case 'selfTriplets':     return isSelfTriplets(d);
-    case 'orphans':          return isOrphans(d);
-    case 'nineGates':        return isNineGates(d);
-    case 'greatWinds':       return isGreatWinds(d);
+    case 'mixedOrphans':     return isMixedOrphans(dctx);
+    case 'smallDragons':     return isSmallDragons(dctx);
+    case 'smallWinds':       return isSmallWinds(dctx);
+    case 'allOneSuit':       return isAllOneSuit(dctx);
+    case 'greatDragons':     return isGreatDragons(dctx);
+    case 'allHonorTiles':    return isAllHonors(dctx);
+    case 'selfTriplets':     return dctx.isStandard && dctx.noChows && d.melds.every(m => m.isConcealed);
+    case 'orphans':          return isOrphans(dctx);
+    case 'nineGates':        return isNineGates(dctx);
+    case 'greatWinds':       return isGreatWinds(dctx);
     case 'thirteenOrphans':  return rules.kokushiAllowed && d.kind === 'thirteenOrphans';
-    case 'allKongs':         return isAllKongs(d);
+    case 'allKongs':         return dctx.isStandard && d.melds.every(m => m.shape === 'kong');
     default: return false;
   }
 }
@@ -178,147 +204,96 @@ function matchesBonus(p: FaanPattern, ctx: WinContext): boolean {
   }
 }
 
-// Wind helpers — scenarios pass yourSeat + roundWind in setup; we wire them into WinContext at scoring time.
-// For audit-time scoring of authored faan-recognition scenarios, the scenario carries the WinContext.
-// Seat-wind and prevailing-wind translation:
-function defaultSeatWind(_ctx: WinContext): Wind {
-  // Scenario-bound: caller must populate from scenario.setup.yourSeat.
-  // Used directly via the wrapper in scenarios/audit.ts.
-  return _ctxSeatWind;
-}
-function prevailingWindFromCtx(_ctx: WinContext): Wind {
-  return _ctxPrevailingWind;
-}
-// Set per-scenario via setScoringContext before calling detectFaan.
-// (Avoids threading two more args through every detector.)
-let _ctxSeatWind: Wind = 'east';
-let _ctxPrevailingWind: Wind = 'east';
-export function setScoringContext(seat: Wind, prevailing: Wind): void {
-  _ctxSeatWind = seat;
-  _ctxPrevailingWind = prevailing;
-}
-
 const WIND_TILE: Record<Wind, Tile> = {
   east, south, west, north,
 };
 
-function hasWindGroup(d: WinningDecomposition, wind: Wind): boolean {
-  if (d.kind !== 'standard') return false;
+function hasWindGroup(dctx: Dctx, wind: Wind): boolean {
   const target = WIND_TILE[wind];
-  return d.melds.some(m => m.shape !== 'chow' && m.tiles[0] === target);
+  return dctx.d.melds.some(m => m.shape !== 'chow' && m.tiles[0] === target);
 }
 
 function hasNonChowOf(d: WinningDecomposition, tile: Tile): boolean {
-  if (d.kind !== 'standard') return false;
   return d.melds.some(m => m.shape !== 'chow' && m.tiles[0] === tile);
 }
 
-function isCommonHand(d: WinningDecomposition): boolean {
-  return d.kind === 'standard' && d.melds.every(m => m.shape === 'chow');
+function isMixedOneSuit(dctx: Dctx): boolean {
+  if (!dctx.isStandard) return false;
+  const hasHonor = dctx.suits.has('wind') || dctx.suits.has('dragon');
+  let nonHonor = 0;
+  for (const s of dctx.suits) if (s !== 'wind' && s !== 'dragon') nonHonor++;
+  return nonHonor === 1 && hasHonor;
 }
 
-function isAllInTriplets(d: WinningDecomposition): boolean {
-  return d.kind === 'standard' && d.melds.every(m => m.shape !== 'chow');
+function isAllOneSuit(dctx: Dctx): boolean {
+  if (!dctx.isStandard) return false;
+  return dctx.suits.size === 1 && !dctx.suits.has('wind') && !dctx.suits.has('dragon');
 }
 
-function isSelfTriplets(d: WinningDecomposition): boolean {
-  return isAllInTriplets(d) && d.kind === 'standard' && d.melds.every(m => m.isConcealed);
+function isAllHonors(dctx: Dctx): boolean {
+  if (!dctx.isStandard) return false;
+  for (const t of dctx.tiles) if (!isHonor(t)) return false;
+  return true;
 }
 
-function allTilesOf(d: WinningDecomposition): Tile[] {
-  const out: Tile[] = [];
-  for (const m of d.melds) out.push(...m.tiles);
-  if (d.kind === 'standard' || d.kind === 'thirteenOrphans') {
-    out.push(d.pair, d.pair);
+function isMixedOrphans(dctx: Dctx): boolean {
+  if (!dctx.isStandard || !dctx.noChows) return false;
+  let hasH = false, hasT = false;
+  for (const t of dctx.tiles) {
+    if (!isTerminalOrHonor(t)) return false;
+    if (isHonor(t)) hasH = true; else hasT = true;
   }
-  if (d.kind === 'sevenPairs') {
-    for (const t of d.pairs) { out.push(t); out.push(t); }
-  }
-  return out;
+  return hasH && hasT;
 }
 
-function isMixedOneSuit(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  const tiles = allTilesOf(d);
-  const suits = new Set(tiles.map(tileSuit));
-  const hasHonor = suits.has('wind') || suits.has('dragon');
-  const nonHonor = new Set([...suits].filter(s => s !== 'wind' && s !== 'dragon'));
-  return nonHonor.size === 1 && hasHonor;
+function isOrphans(dctx: Dctx): boolean {
+  if (!dctx.isStandard || !dctx.noChows) return false;
+  for (const t of dctx.tiles) if (!isTerminal(t)) return false;
+  return true;
 }
 
-function isAllOneSuit(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  const tiles = allTilesOf(d);
-  const suits = new Set(tiles.map(tileSuit));
-  return suits.size === 1 && !suits.has('wind') && !suits.has('dragon');
+function isSmallDragons(dctx: Dctx): boolean {
+  if (!dctx.isStandard) return false;
+  const d = dctx.d as Extract<WinningDecomposition, { kind: 'standard' }>;
+  let dragonGroups = 0;
+  for (const m of d.melds) if (DRAGONS.has(m.tiles[0]!)) dragonGroups++;
+  return dragonGroups === 2 && DRAGONS.has(d.pair);
 }
 
-function isAllHonors(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  return allTilesOf(d).every(isHonor);
+function isGreatDragons(dctx: Dctx): boolean {
+  if (!dctx.isStandard) return false;
+  const heads = new Set<Tile>();
+  for (const h of dctx.meldHeads) if (DRAGONS.has(h)) heads.add(h);
+  return heads.size === 3;
 }
 
-function isMixedOrphans(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  if (!d.melds.every(m => m.shape !== 'chow')) return false;
-  const tiles = allTilesOf(d);
-  const allTH = tiles.every(isTerminalOrHonor);
-  const hasH = tiles.some(isHonor);
-  const hasT = tiles.some(t => !isHonor(t));
-  return allTH && hasH && hasT;
+function isSmallWinds(dctx: Dctx): boolean {
+  if (!dctx.isStandard) return false;
+  const d = dctx.d as Extract<WinningDecomposition, { kind: 'standard' }>;
+  let windGroups = 0;
+  for (const m of d.melds) if (WINDS.has(m.tiles[0]!)) windGroups++;
+  return windGroups === 3 && WINDS.has(d.pair);
 }
 
-function isOrphans(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  if (!d.melds.every(m => m.shape !== 'chow')) return false;
-  return allTilesOf(d).every(isTerminal);
+function isGreatWinds(dctx: Dctx): boolean {
+  if (!dctx.isStandard) return false;
+  const heads = new Set<Tile>();
+  for (const h of dctx.meldHeads) if (WINDS.has(h)) heads.add(h);
+  return heads.size === 4;
 }
 
-function isSmallDragons(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  const dragons = new Set<Tile>([red, green, white]);
-  const dragonGroups = d.melds.filter(m => dragons.has(m.tiles[0]!));
-  const pairIsDragon = dragons.has(d.pair);
-  return dragonGroups.length === 2 && pairIsDragon;
-}
-
-function isGreatDragons(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  const dragons = new Set<Tile>([red, green, white]);
-  const groupHeads = new Set(d.melds.map(m => m.tiles[0]!).filter(t => dragons.has(t)));
-  return groupHeads.size === 3;
-}
-
-function isSmallWinds(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  const winds = new Set<Tile>([east, south, west, north]);
-  const windGroups = d.melds.filter(m => winds.has(m.tiles[0]!));
-  const pairIsWind = winds.has(d.pair);
-  return windGroups.length === 3 && pairIsWind;
-}
-
-function isGreatWinds(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
-  const winds = new Set<Tile>([east, south, west, north]);
-  const groupHeads = new Set(d.melds.map(m => m.tiles[0]!).filter(t => winds.has(t)));
-  return groupHeads.size === 4;
-}
-
-function isNineGates(d: WinningDecomposition): boolean {
-  if (d.kind !== 'standard') return false;
+function isNineGates(dctx: Dctx): boolean {
+  if (!dctx.isStandard) return false;
+  const d = dctx.d as Extract<WinningDecomposition, { kind: 'standard' }>;
   if (!d.melds.every(m => m.isConcealed)) return false;
-  if (!isAllOneSuit(d)) return false;
+  if (!isAllOneSuit(dctx)) return false;
   const counts = new Array(9).fill(0);
-  for (const t of allTilesOf(d)) counts[tileNumber(t) - 1]++;
+  for (const t of dctx.tiles) counts[tileNumber(t) - 1]++;
   const base = [3, 1, 1, 1, 1, 1, 1, 1, 3];
   let diffs = 0;
   for (let i = 0; i < 9; i++) {
-    if (counts[i] < base[i]!) return false;
-    diffs += counts[i] - base[i]!;
+    if (counts[i]! < base[i]!) return false;
+    diffs += counts[i]! - base[i]!;
   }
   return diffs === 1;
-}
-
-function isAllKongs(d: WinningDecomposition): boolean {
-  return d.kind === 'standard' && d.melds.every(m => m.shape === 'kong');
 }

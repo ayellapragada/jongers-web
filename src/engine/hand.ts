@@ -29,10 +29,14 @@ export function parseHand(notation: string, melds: readonly Meld[] = []): Hand {
   return makeHand(parseMPSZ(notation), melds);
 }
 
-export function concealedCounts(h: Hand): number[] {
+export function tilesToCounts(tiles: readonly Tile[]): number[] {
   const counts = new Array(34).fill(0);
-  for (const t of h.concealed) counts[t]++;
+  for (const t of tiles) counts[t]++;
   return counts;
+}
+
+export function concealedCounts(h: Hand): number[] {
+  return tilesToCounts(h.concealed);
 }
 
 export function declaredMeldSlots(h: Hand): number {

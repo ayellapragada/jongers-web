@@ -10,14 +10,16 @@ export function standardShanten(h: Hand): number {
 
 export function regularShanten(tiles34: number[]): number {
   if (tiles34.length !== 34) throw new Error(`tiles34 must be length 34, got ${tiles34.length}`);
-  const calc = new RegularShanten(tiles34.slice());
+  const calc = new RegularShanten(Int8Array.from(tiles34));
   return calc.calculate();
 }
 
 const AGARI = -1;
 
+// Int8Array gives signed slots for transient negatives during recursive
+// mutate-restore. Values stay within [-3, 4] in practice.
 class RegularShanten {
-  tiles: number[];
+  tiles: Int8Array;
   numberMelds = 0;
   numberTatsu = 0;
   numberPairs = 0;
@@ -26,7 +28,7 @@ class RegularShanten {
   flagIsolatedTiles = 0n;
   minShanten = 8;
 
-  constructor(tiles: number[]) {
+  constructor(tiles: Int8Array) {
     this.tiles = tiles;
   }
 
@@ -156,18 +158,23 @@ class RegularShanten {
     if (retShanten < this.minShanten) this.minShanten = retShanten;
   }
 
-  increaseSet(k: number)    { this.tiles[k] -= 3; this.numberMelds += 1; }
-  decreaseSet(k: number)    { this.tiles[k] += 3; this.numberMelds -= 1; }
-  increasePair(k: number)   { this.tiles[k] -= 2; this.numberPairs += 1; }
-  decreasePair(k: number)   { this.tiles[k] += 2; this.numberPairs -= 1; }
-  increaseSyuntsu(k: number){ this.tiles[k]--; this.tiles[k+1]--; this.tiles[k+2]--; this.numberMelds++; }
-  decreaseSyuntsu(k: number){ this.tiles[k]++; this.tiles[k+1]++; this.tiles[k+2]++; this.numberMelds--; }
-  increaseTatsuFirst(k: number){ this.tiles[k]--; this.tiles[k+1]--; this.numberTatsu++; }
-  decreaseTatsuFirst(k: number){ this.tiles[k]++; this.tiles[k+1]++; this.numberTatsu--; }
-  increaseTatsuSecond(k: number){ this.tiles[k]--; this.tiles[k+2]--; this.numberTatsu++; }
-  decreaseTatsuSecond(k: number){ this.tiles[k]++; this.tiles[k+2]++; this.numberTatsu--; }
-  increaseIsolatedTile(k: number){ this.tiles[k]--; this.flagIsolatedTiles |= 1n << BigInt(k); }
-  decreaseIsolatedTile(k: number){ this.tiles[k]++; this.flagIsolatedTiles &= ~(1n << BigInt(k)); }
+  // Int8Array indexed access is typed as `number | undefined` under
+  // noUncheckedIndexedAccess, but every call site here passes an index the
+  // kernel has already bounds-checked, so we read via the helper.
+  private t(k: number): number { return this.tiles[k]!; }
+
+  increaseSet(k: number)    { this.tiles[k] = this.t(k) - 3; this.numberMelds += 1; }
+  decreaseSet(k: number)    { this.tiles[k] = this.t(k) + 3; this.numberMelds -= 1; }
+  increasePair(k: number)   { this.tiles[k] = this.t(k) - 2; this.numberPairs += 1; }
+  decreasePair(k: number)   { this.tiles[k] = this.t(k) + 2; this.numberPairs -= 1; }
+  increaseSyuntsu(k: number){ this.tiles[k] = this.t(k) - 1; this.tiles[k+1] = this.t(k+1) - 1; this.tiles[k+2] = this.t(k+2) - 1; this.numberMelds++; }
+  decreaseSyuntsu(k: number){ this.tiles[k] = this.t(k) + 1; this.tiles[k+1] = this.t(k+1) + 1; this.tiles[k+2] = this.t(k+2) + 1; this.numberMelds--; }
+  increaseTatsuFirst(k: number){ this.tiles[k] = this.t(k) - 1; this.tiles[k+1] = this.t(k+1) - 1; this.numberTatsu++; }
+  decreaseTatsuFirst(k: number){ this.tiles[k] = this.t(k) + 1; this.tiles[k+1] = this.t(k+1) + 1; this.numberTatsu--; }
+  increaseTatsuSecond(k: number){ this.tiles[k] = this.t(k) - 1; this.tiles[k+2] = this.t(k+2) - 1; this.numberTatsu++; }
+  decreaseTatsuSecond(k: number){ this.tiles[k] = this.t(k) + 1; this.tiles[k+2] = this.t(k+2) + 1; this.numberTatsu--; }
+  increaseIsolatedTile(k: number){ this.tiles[k] = this.t(k) - 1; this.flagIsolatedTiles |= 1n << BigInt(k); }
+  decreaseIsolatedTile(k: number){ this.tiles[k] = this.t(k) + 1; this.flagIsolatedTiles &= ~(1n << BigInt(k)); }
 
   removeCharacterTiles(nc: number): void {
     let fourCopies = 0n;

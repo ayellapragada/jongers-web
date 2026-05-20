@@ -1,12 +1,14 @@
-import { parseMPSZ, formatTile } from '../engine/mpsz';
-import { makeHand, makeMeld } from '../engine/hand';
-import { Tile } from '../engine/tile';
-import { discardOptions, bestDiscards } from '../engine/discard';
-import { isWinning, canWinOnTile } from '../engine/agari';
-import { standardShanten } from '../engine/shanten';
-import { waits } from '../engine/waits';
-import { decomposeWinningHand } from '../engine/decompose';
-import { detectFaan, setScoringContext, HK_OFFICIAL_RULES } from '../engine/faan';
+import {
+  parseMPSZ, formatTile,
+  makeHand, makeMeld, type MeldKind,
+  Tile,
+  discardOptions, bestDiscards,
+  isWinning, canWinOnTile,
+  standardShanten,
+  waits,
+  decomposeWinningHand,
+  detectFaan, HK_OFFICIAL_RULES, type FaanPattern,
+} from '../engine';
 import type {
   Scenario, ScenarioLibrary, DiscardScenario, ClaimScenario,
   WaitScenario, FaanRecognitionScenario,
@@ -35,10 +37,7 @@ const checkDiscard: Check<DiscardScenario> = (s) => {
 
   // Build 14-tile hand: concealed + drewTile + declared melds from setup.
   const handTiles = [...concealed, drew];
-  const melds = (s.setup.melds ?? []).map(m => ({
-    kind: m.kind,
-    tiles: m.tiles.flatMap(parseMPSZ),
-  }));
+  const melds = parseMelds(s.setup);
   const totalConcealedPlusMelds = handTiles.length + melds.reduce((n, m) => n + m.tiles.length, 0);
   if (totalConcealedPlusMelds !== 14) {
     return `discard scenario must total 14 tiles (concealed + drew + melds); got ${totalConcealedPlusMelds}`;
@@ -75,12 +74,10 @@ const checkDiscard: Check<DiscardScenario> = (s) => {
       return `answer '${formatTile(at)}' is not engine-best; best=[${bestStrs}]`;
     }
   }
-  // Also flag if engine knows of MORE best options than authored — author may want to extend.
-  // Not a fail; just don't enforce reverse-completeness.
   return null;
 };
-function parseMelds(s: { melds?: { kind: string; tiles: string[] }[] }) {
-  return (s.melds ?? []).map(m => makeMeld(m.kind as any, m.tiles.flatMap(parseMPSZ)));
+function parseMelds(s: { melds?: { kind: MeldKind; tiles: string[] }[] }) {
+  return (s.melds ?? []).map(m => makeMeld(m.kind, m.tiles.flatMap(parseMPSZ)));
 }
 
 const checkClaim: Check<ClaimScenario> = (s) => {
@@ -93,7 +90,6 @@ const checkClaim: Check<ClaimScenario> = (s) => {
   const melds = parseMelds(s.setup);
   const a = s.answer;
 
-  // Legality checks per action:
   if (a.action === 'pon') {
     const inHand = concealed.filter(t => t === trigger).length;
     if (inHand < 2) return `pon needs 2 copies of ${formatTile(trigger)} in hand, got ${inHand}`;
@@ -110,7 +106,6 @@ const checkClaim: Check<ClaimScenario> = (s) => {
       return `wu is not legal — trigger does not complete a winning hand`;
     }
   }
-  // 'pass' is always legal; the audit just trusts the author here.
   return null;
 };
 
@@ -143,9 +138,9 @@ const checkFaanRecognition: Check<FaanRecognitionScenario> = (s) => {
   if (!canWinOnTile(makeHand(concealed, melds), winTile)) {
     return `hand + winTile is not a winning shape`;
   }
-  setScoringContext(s.setup.yourSeat, s.setup.roundWind);
+  const ctx = { ...s.winContext, seatWind: s.setup.yourSeat, prevailingWind: s.setup.roundWind };
   const decs = decomposeWinningHand(makeHand(concealed, melds), winTile);
-  const items = detectFaan(decs, winTile, s.winContext, HK_OFFICIAL_RULES);
+  const items = detectFaan(decs, winTile, ctx, HK_OFFICIAL_RULES);
   const enginePatterns = new Set(items.map(i => i.pattern));
   const engineTotal = items.reduce((a, b) => a + b.faan, 0);
   const authored = new Set(s.answer.patterns);
@@ -155,7 +150,7 @@ const checkFaanRecognition: Check<FaanRecognitionScenario> = (s) => {
     return `authored patterns differ from engine; engine=[${eStr}], total=${engineTotal}`;
   }
   for (const p of authored) {
-    if (!enginePatterns.has(p as any)) {
+    if (!enginePatterns.has(p as FaanPattern)) {
       const eStr = [...enginePatterns].join(', ');
       return `authored pattern '${p}' not in engine=[${eStr}]`;
     }

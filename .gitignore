@@ -3,3 +3,18 @@ dist
 .DS_Store
 .vite
 *.log
+
+# Vite / env
+.env
+.env.*
+*.local
+
+# Test coverage
+coverage
+
+# Editor
+.idea/
+.vscode/
+
+# OS
+Thumbs.db

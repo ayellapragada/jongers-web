@@ -1,4 +1,4 @@
-import type { MeldKind } from '../engine/hand';
+import type { MeldKind, FaanPattern } from '../engine';
 
 export type Wind = 'east' | 'south' | 'west' | 'north';
 
@@ -10,7 +10,7 @@ export type WaitShape =
   | 'penchan'
   | 'nobetan';
 
-export type FaanPatternId = string;
+export type FaanPatternId = FaanPattern;
 
 export type MeldJSON = {
   kind: MeldKind;
@@ -68,6 +68,8 @@ export type WaitScenario = ScenarioBase & {
 
 export type WinContext = {
   selfDraw: boolean;
+  seatWind: Wind;
+  prevailingWind: Wind;
   lastCatch?: boolean;
   robbingKong?: boolean;
   winByKong?: boolean;

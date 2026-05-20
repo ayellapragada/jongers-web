@@ -1,7 +1,7 @@
 // Decompose a winning hand into 4-melds-plus-pair (or 7-pairs / 13-orphans) readings.
 // Port of MahjongKit/Scoring/HandDecomposition.swift.
 
-import { Hand } from './hand';
+import { Hand, tilesToCounts } from './hand';
 import { Tile, tileFromIndex, isHonor } from './tile';
 import { isWinning } from './agari';
 
@@ -25,7 +25,7 @@ export function decomposeWinningHand(hand: Hand, winTile: Tile | null): WinningD
   if (!isWinning({ concealed, melds: hand.melds })) return [];
 
   if (hand.melds.length === 0) {
-    const counts = countsOf(concealed);
+    const counts = tilesToCounts(concealed);
     const orphansPair = thirteenOrphansPair(counts);
     if (orphansPair !== null) {
       return [{ kind: 'thirteenOrphans', melds: [], pair: orphansPair }];
@@ -54,12 +54,6 @@ export function decomposeWinningHand(hand: Hand, winTile: Tile | null): WinningD
     melds: [...declared, ...r.melds],
     pair: r.pair,
   }));
-}
-
-function countsOf(tiles: Tile[]): number[] {
-  const c = new Array(34).fill(0);
-  for (const t of tiles) c[t]++;
-  return c;
 }
 
 const TERMINALS_HONORS = [0, 8, 9, 17, 18, 26, 27, 28, 29, 30, 31, 32, 33];
@@ -93,7 +87,7 @@ function sevenPairsTiles(counts: number[]): Tile[] | null {
 }
 
 function decomposeConcealed(tiles: Tile[]): Array<{ melds: DecomposedMeld[]; pair: Tile }> {
-  const counts = countsOf(tiles);
+  const counts = tilesToCounts(tiles);
   const melds: DecomposedMeld[] = [];
   let pair: Tile | null = null;
   const results: Array<{ melds: DecomposedMeld[]; pair: Tile }> = [];

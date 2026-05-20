@@ -29,16 +29,26 @@
   let cursor = $state(0);
 
   let now = $state(Date.now());
-  setInterval(() => { now = Date.now(); }, 60_000);
+  $effect(() => {
+    const id = setInterval(() => { now = Date.now(); }, 60_000);
+    return () => clearInterval(id);
+  });
 
   const current = $derived.by(() => {
-    cursor;
+    cursor;  // bump to re-pick after Next
     return getNextScenario(library, storage, filter, now);
   });
 
-  const dueCount = $derived(
-    Object.values(storage.srs).filter(c => c.dueAt <= now).length
-  );
+  // Available to drill = SRS cards due-or-overdue + unseen scenarios (no card yet).
+  const dueCount = $derived.by(() => {
+    const pool = filter === 'all' ? library : library.filter(s => s.type === filter);
+    let n = 0;
+    for (const s of pool) {
+      const card = storage.srs[s.id];
+      if (card === undefined || card.dueAt <= now) n++;
+    }
+    return n;
+  });
 
   function handleSubmit(correct: boolean) {
     if (!current) return;

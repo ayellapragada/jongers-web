@@ -1,18 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { decomposeWinningHand } from '../../src/engine/decompose';
-import { detectFaan, setScoringContext, HK_OFFICIAL_RULES } from '../../src/engine/faan';
+import { detectFaan, HK_OFFICIAL_RULES } from '../../src/engine/faan';
 import { parseHand } from '../../src/engine/hand';
 import { parseMPSZ } from '../../src/engine/mpsz';
-import type { WinContext } from '../../src/scenarios/schema';
+import type { WinContext, Wind } from '../../src/scenarios/schema';
 
-const baseCtx: WinContext = { selfDraw: false, discarder: 'south' };
+type CtxIn = Omit<WinContext, 'seatWind' | 'prevailingWind'>;
+const baseCtx: CtxIn = { selfDraw: false, discarder: 'south' };
 
-function score(handStr: string, winStr: string, ctx: WinContext, seat: 'east'|'south'|'west'|'north' = 'east', prevailing: 'east'|'south'|'west'|'north' = 'east') {
-  setScoringContext(seat, prevailing);
+function score(handStr: string, winStr: string, ctx: CtxIn, seat: Wind = 'east', prevailing: Wind = 'east') {
   const winTile = parseMPSZ(winStr)[0]!;
   const hand = parseHand(handStr);
   const decs = decomposeWinningHand(hand, winTile);
-  return detectFaan(decs, winTile, ctx, HK_OFFICIAL_RULES);
+  return detectFaan(decs, winTile, { ...ctx, seatWind: seat, prevailingWind: prevailing }, HK_OFFICIAL_RULES);
 }
 
 describe('detectFaan — basic patterns', () => {

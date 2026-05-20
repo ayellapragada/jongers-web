@@ -1,6 +1,5 @@
 <script lang="ts">
-  import type { Tile } from '../../engine/tile';
-  import { formatTile } from '../../engine/mpsz';
+  import { type Tile, formatTile } from '../../engine';
 
   type TileState = 'normal' | 'selected' | 'dim' | 'highlighted' | 'incorrect-pick' | 'engine-best';
 

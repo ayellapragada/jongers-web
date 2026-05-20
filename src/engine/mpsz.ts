@@ -56,6 +56,15 @@ export function parseMPSZ(input: string): Tile[] {
   return tiles;
 }
 
+// Parse a string that must contain exactly one tile.
+export function parseTile(s: string): Tile {
+  const ts = parseMPSZ(s);
+  if (ts.length !== 1) {
+    throw new MPSZParseError(`expected single tile, got '${s}' (${ts.length} tiles)`);
+  }
+  return ts[0]!;
+}
+
 export function formatTile(t: Tile): string {
   const s = tileSuit(t);
   const n = tileNumber(t);
