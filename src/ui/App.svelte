@@ -1,12 +1,28 @@
 <script lang="ts">
-  // Root component. Drill mounts here once added.
+  import Chrome from './Chrome.svelte';
+  import Drill from './Drill.svelte';
+  import Glossary from './Glossary.svelte';
+  import Settings from './Settings.svelte';
+
+  let glossaryOpen = $state(false);
+  let settingsOpen = $state(false);
 </script>
 
-<main>
-  <h1>jongers</h1>
-  <p>walking skeleton</p>
-</main>
+<Chrome
+  onShowGlossary={() => glossaryOpen = true}
+  onShowSettings={() => settingsOpen = true}
+/>
+<Drill />
+<Glossary open={glossaryOpen} onClose={() => glossaryOpen = false} />
+<Settings open={settingsOpen} onClose={() => settingsOpen = false} />
+
+<footer>
+  <small>
+    Tile art: TBD (Unicode fallback for now).
+  </small>
+</footer>
 
 <style>
-  main { font-family: system-ui; padding: 1rem; max-width: 720px; margin: 0 auto; }
+  :global(body) { margin: 0; font-family: system-ui, -apple-system, sans-serif; }
+  footer { padding: 1rem; text-align: center; color: #888; }
 </style>
