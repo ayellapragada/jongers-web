@@ -1,1 +1,34 @@
-[]
+[
+  {
+    "id": "faan-001",
+    "type": "faan-recognition",
+    "difficulty": 1,
+    "tags": ["commonHand"],
+    "explanation": "Four sequences + a non-yaku pair → Common Hand (1 faan).",
+    "setup": {
+      "hand": "123m456p789s234m2z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "winTile": "2z",
+    "winContext": { "selfDraw": false, "discarder": "south" },
+    "answer": { "patterns": ["commonHand"], "totalFaan": 1 }
+  },
+  {
+    "id": "faan-002",
+    "type": "faan-recognition",
+    "difficulty": 3,
+    "tags": ["greatDragons"],
+    "explanation": "Pongs of all three dragons → Great Dragons (8 faan). Supersedes Small Dragons and the individual dragon pongs.",
+    "setup": {
+      "hand": "555z666z777z234m1p",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "winTile": "1p",
+    "winContext": { "selfDraw": false, "discarder": "south" },
+    "answer": { "patterns": ["greatDragons"], "totalFaan": 8 }
+  }
+]

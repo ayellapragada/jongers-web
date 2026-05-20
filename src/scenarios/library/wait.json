@@ -1,1 +1,30 @@
-[]
+[
+  {
+    "id": "wait-001",
+    "type": "wait",
+    "difficulty": 1,
+    "tags": ["tanki"],
+    "explanation": "Three complete sequences and a pong; the lone 2z is a pair wait (tanki).",
+    "setup": {
+      "hand": "123m456p789s1112z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "answer": { "winningTiles": ["2z"], "shape": "tanki" }
+  },
+  {
+    "id": "wait-002",
+    "type": "wait",
+    "difficulty": 2,
+    "tags": ["ryanmen"],
+    "explanation": "Three complete melds, a pair, and a 45m ryanmen — waits on 3m and 6m.",
+    "setup": {
+      "hand": "234m567m45m789p11s",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "answer": { "winningTiles": ["3m", "6m"], "shape": "ryanmen" }
+  }
+]

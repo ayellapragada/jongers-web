@@ -1,1 +1,32 @@
-[]
+[
+  {
+    "id": "claim-001",
+    "type": "claim",
+    "difficulty": 1,
+    "tags": ["wu"],
+    "explanation": "The 2z completes your winning hand. Always call wu on a free win.",
+    "setup": {
+      "hand": "123m456p789s1112z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "trigger": { "discarder": "south", "tile": "2z" },
+    "answer": { "action": "wu" }
+  },
+  {
+    "id": "claim-002",
+    "type": "claim",
+    "difficulty": 2,
+    "tags": ["pass"],
+    "explanation": "You could pon the 5m, but doing so dismantles your 45m ryanmen and drops you back to 1-shanten. Pass.",
+    "setup": {
+      "hand": "234m55m45m789p11s2z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "trigger": { "discarder": "south", "tile": "5m" },
+    "answer": { "action": "pass" }
+  }
+]

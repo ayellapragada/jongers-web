@@ -1,1 +1,122 @@
-[]
+[
+  {
+    "id": "efficiency-001",
+    "type": "discard",
+    "difficulty": 1,
+    "tags": ["efficiency", "honors"],
+    "explanation": "After discarding 1z, the 1123s region serves as both a pair and a penchan: waits on 1s or 4s. Total ukeire 6. Any alternative discard breaks a working block.",
+    "setup": {
+      "hand": "123456m789p112s1z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "drewTile": "3s",
+    "answer": { "discards": ["1z"] }
+  },
+  {
+    "id": "efficiency-002",
+    "type": "discard",
+    "difficulty": 1,
+    "tags": ["tenpai", "efficiency"],
+    "explanation": "Three complete sequences, a White Dragon pair, a 34s ryanmen, and a lone Red Dragon. The Red Dragon is the only tile not in a block. Discard it for tenpai on 2s / 5s.",
+    "setup": {
+      "hand": "123456m789p34s57z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "drewTile": "5z",
+    "answer": { "discards": ["7z"] }
+  },
+  {
+    "id": "efficiency-003",
+    "type": "discard",
+    "difficulty": 2,
+    "tags": ["tenpai", "ukeire"],
+    "explanation": "Discarding 5s leaves a 23s ryanmen accepting 1s / 4s (ukeire 6). Discarding 2s instead leaves a 35s kanchan accepting only 4s (ukeire 3). Both are tenpai; 5s's wait is twice as wide.",
+    "setup": {
+      "hand": "234567m789p25s55z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "drewTile": "3s",
+    "answer": { "discards": ["5s"] }
+  },
+  {
+    "id": "efficiency-004",
+    "type": "discard",
+    "difficulty": 2,
+    "tags": ["tenpai", "kanchan"],
+    "explanation": "Discarding 8p leaves a narrow kanchan 57p wait (2 tiles). Discarding 9p preserves the 58p kanchan on 6p and keeps improvement paths open — ukeire 3 vs 2. A deeper version of this lesson: measure waits by count, not by shanten alone.",
+    "setup": {
+      "hand": "234m567m789p123s5p",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "drewTile": "8p",
+    "answer": { "discards": ["9p"] }
+  },
+  {
+    "id": "efficiency-005",
+    "type": "discard",
+    "difficulty": 2,
+    "tags": ["tenpai", "penchan", "shanpon"],
+    "explanation": "Discard 9p → wait on 7p via the 89p penchan (ukeire 4). Discard 8p → shanpon wait on 9p / East (ukeire 4). Both are valid tenpai discards with identical acceptance.",
+    "setup": {
+      "hand": "234m567m89p123s11z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "drewTile": "9p",
+    "answer": { "discards": ["8p", "9p"] }
+  },
+  {
+    "id": "efficiency-006",
+    "type": "discard",
+    "difficulty": 2,
+    "tags": ["tenpai", "shanpon"],
+    "explanation": "Three sequences, two sou pairs (11s, 22s), and a lone White Dragon. Discarding the dragon produces a shanpon wait on 1s / 2s.",
+    "setup": {
+      "hand": "234m567m789p1122s",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "drewTile": "5z",
+    "answer": { "discards": ["5z"] }
+  },
+  {
+    "id": "efficiency-007",
+    "type": "discard",
+    "difficulty": 3,
+    "tags": ["tenpai", "shape", "symmetry"],
+    "explanation": "The 22334m region is the decision point. Discard 2m → 2334m ryanmen on 1m / 4m (ukeire 7). Discard 5m → 2233m, same ukeire via different decomposition. Both 7-ukeire tenpai.",
+    "setup": {
+      "hand": "22334m678p234s55z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "drewTile": "5m",
+    "answer": { "discards": ["2m", "5m"] }
+  },
+  {
+    "id": "efficiency-008",
+    "type": "discard",
+    "difficulty": 1,
+    "tags": ["efficiency", "honors", "penchan"],
+    "explanation": "Three melds + 55z pair + 12s penchan + 1z floater. The 12s wants 3s, the pair is locked, the East is dead weight. Discard 1z, tenpai on 3s.",
+    "setup": {
+      "hand": "234m567m789p12s55z",
+      "yourSeat": "east",
+      "dealer": "east",
+      "roundWind": "east"
+    },
+    "drewTile": "1z",
+    "answer": { "discards": ["1z"] }
+  }
+]

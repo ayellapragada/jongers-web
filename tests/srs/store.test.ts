@@ -10,7 +10,7 @@ const baseSetup = {
 };
 const scenario = (id: string): DiscardScenario => ({
   id, type: 'discard', difficulty: 1, tags: [], setup: baseSetup,
-  drewTile: '1m', answer: { discard: '1m' },
+  drewTile: '1m', answer: { discards: ['1m'] },
 });
 
 beforeEach(() => { localStorage.clear(); });

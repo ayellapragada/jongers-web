@@ -45,7 +45,8 @@ export type ScenarioBase = {
 export type DiscardScenario = ScenarioBase & {
   type: 'discard';
   drewTile: string;
-  answer: { discard: string };
+  // Multiple tiles when several discards are equally engine-best.
+  answer: { discards: string[] };
 };
 
 export type ClaimScenario = ScenarioBase & {
