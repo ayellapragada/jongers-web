@@ -124,18 +124,11 @@ const checkWait: Check<WaitScenario> = (s) => {
   if (standardShanten(hand) !== 0) {
     return `wait scenario requires a tenpai hand (shanten=0); got shanten=${standardShanten(hand)}`;
   }
-  const engineWaits = new Set(waits(hand).map(w => w.tile));
-  const authored = new Set(s.answer.winningTiles.flatMap(parseMPSZ));
-  // Audit: authored must equal engine waits.
-  if (engineWaits.size !== authored.size) {
-    const eStr = [...engineWaits].map(formatTile).join(',');
-    return `authored winning tiles don't match engine; engine=[${eStr}]`;
-  }
-  for (const t of authored) {
-    if (!engineWaits.has(t)) {
-      const eStr = [...engineWaits].map(formatTile).join(',');
-      return `authored tile ${formatTile(t)} not in engine waits=[${eStr}]`;
-    }
+  // Audit: at least one of the engine waits must carry the authored shape.
+  const engineShapes = new Set<string>();
+  for (const w of waits(hand)) for (const s of w.shapes) engineShapes.add(s);
+  if (!engineShapes.has(s.answer.shape)) {
+    return `authored shape '${s.answer.shape}' not produced by engine; got shapes=[${[...engineShapes].join(',')}]`;
   }
   return null;
 };

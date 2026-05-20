@@ -99,7 +99,7 @@
 </main>
 
 <style>
-  main { padding: 1rem; max-width: 720px; margin: 0 auto; }
+  main { padding: 1rem; max-width: 960px; margin: 0 auto; }
   .empty { color: #777; font-style: italic; }
   .filter { display: block; margin: 0.5rem 0 1rem; }
   .next { margin-top: 1rem; padding: 0.6rem 1.2rem; font-size: 1rem; cursor: pointer; }

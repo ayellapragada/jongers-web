@@ -11,7 +11,7 @@
       "dealer": "east",
       "roundWind": "east"
     },
-    "answer": { "winningTiles": ["2z"], "shape": "tanki" }
+    "answer": { "shape": "tanki" }
   },
   {
     "id": "wait-002",
@@ -25,6 +25,6 @@
       "dealer": "east",
       "roundWind": "east"
     },
-    "answer": { "winningTiles": ["3m", "6m"], "shape": "ryanmen" }
+    "answer": { "shape": "ryanmen" }
   }
 ]

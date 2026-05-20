@@ -61,7 +61,9 @@ export type ClaimScenario = ScenarioBase & {
 
 export type WaitScenario = ScenarioBase & {
   type: 'wait';
-  answer: { winningTiles: string[]; shape?: WaitShape };
+  // The answer is the wait *shape*. Winning tiles fall out from the engine
+  // and are shown on reveal.
+  answer: { shape: WaitShape };
 };
 
 export type WinContext = {

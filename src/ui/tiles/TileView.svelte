@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Tile } from '../../engine/tile';
-  import { tileSuit, tileNumber } from '../../engine/tile';
+  import { formatTile } from '../../engine/mpsz';
 
   type TileState = 'normal' | 'selected' | 'dim' | 'highlighted' | 'incorrect-pick' | 'engine-best';
 
@@ -10,14 +10,12 @@
     onclick?: () => void;
   } = $props();
 
-  function tileChar(t: Tile): string {
-    const s = tileSuit(t);
-    const n = tileNumber(t);
-    if (s === 'man')    return String.fromCodePoint(0x1F007 + (n - 1));
-    if (s === 'sou')    return String.fromCodePoint(0x1F010 + (n - 1));
-    if (s === 'pin')    return String.fromCodePoint(0x1F019 + (n - 1));
-    if (s === 'wind')   return String.fromCodePoint(0x1F000 + (n - 1));
-    return String.fromCodePoint([0x1F006, 0x1F005, 0x1F004][n - 1]!);
+  // Vite glob: eager-load every tile SVG as a URL at build time.
+  const svgs = import.meta.glob('./assets/*.svg', { eager: true, query: '?url', import: 'default' }) as Record<string, string>;
+
+  function srcFor(t: Tile): string {
+    const name = formatTile(t);
+    return svgs[`./assets/${name}.svg`] ?? '';
   }
 </script>
 
@@ -26,26 +24,33 @@
   class="tile state-{state}"
   onclick={onclick}
   disabled={!onclick}
-  aria-label="tile {tile}"
+  aria-label={`tile ${formatTile(tile)}`}
 >
-  {tileChar(tile)}
+  <img src={srcFor(tile)} alt={formatTile(tile)} draggable="false" />
 </button>
 
 <style>
   .tile {
-    font-size: 2.5rem;
-    line-height: 1;
-    min-width: 44px; min-height: 44px;
-    padding: 4px 6px;
-    background: #fafafa;
-    border: 1px solid #ccc;
+    width: 44px; height: 58px;
+    padding: 2px;
+    background: #fdfaf4;
+    border: 1px solid #999;
     border-radius: 6px;
     cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+    display: flex; align-items: center; justify-content: center;
   }
+  /* Shrink on narrow screens so a full 14-tile hand still fits. */
+  @media (max-width: 560px) {
+    .tile { width: 36px; height: 48px; }
+  }
+  .tile img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
   .tile:disabled { cursor: default; }
-  .state-selected   { background: #e0f0ff; border-color: #4a8fd6; }
-  .state-dim        { opacity: 0.4; }
-  .state-highlighted{ background: #fff5cc; border-color: #d6b34a; }
-  .state-incorrect-pick { background: #ffe0e0; border-color: #d64a4a; }
-  .state-engine-best    { background: #e0ffe5; border-color: #4ad66a; }
+  .tile:hover:not(:disabled) { background: #f7f2e6; }
+
+  .state-selected   { background: #d8ecff; border-color: #2e6fb0; box-shadow: 0 0 0 2px #2e6fb088; }
+  .state-dim        { opacity: 0.3; }
+  .state-highlighted{ background: #fff5cc; border-color: #b88a00; }
+  .state-incorrect-pick { background: #ffd6d6; border-color: #b03030; }
+  .state-engine-best    { background: #d6ffdf; border-color: #2e9050; }
 </style>

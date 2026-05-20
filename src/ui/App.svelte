@@ -18,7 +18,7 @@
 
 <footer>
   <small>
-    Tile art: TBD (Unicode fallback for now).
+    Tile art: <a href="https://github.com/perthmahjongsoc/mahjong-tiles-svg">Perth Mahjong Society</a>, CC-BY-SA-4.0.
   </small>
 </footer>
 

@@ -140,7 +140,11 @@
   .tags { margin-top: 0.5rem; }
   .tag { background: #eef; color: #335; padding: 1px 8px; border-radius: 999px; font-size: 0.8rem; margin-right: 4px; }
 
-  .hand { display: flex; flex-wrap: wrap; gap: 4px; margin: 1rem 0; }
+  .hand {
+    display: flex; flex-wrap: nowrap; gap: 4px; margin: 1rem 0;
+    overflow-x: auto; padding-bottom: 4px;
+  }
+  .slot { flex: 0 0 auto; }
   .slot.drew { margin-left: 12px; border-left: 2px dashed #aaa; padding-left: 12px; }
 
   .hint { color: #666; font-size: 0.9rem; margin: 0.5rem 0; }
